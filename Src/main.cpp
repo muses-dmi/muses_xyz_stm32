@@ -36,6 +36,7 @@
 #include <circular_buffer.hpp>
 
 #include <ssd1306.h>
+#include <oled.hpp>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -65,11 +66,11 @@ volatile uint8_t idx;
 volatile int32_t pos_count;
 
 // OLED controls
-bool oled_values_changed = true; 
-uint32_t ctrl1 = 0;
-uint32_t ctrl2 = 0;
-uint32_t ctrl3 = 0;
-uint32_t ctrl4 = 0;
+// bool oled_values_changed = true; 
+// uint32_t ctrl1 = 0;
+// uint32_t ctrl2 = 0;
+// uint32_t ctrl3 = 0;
+// uint32_t ctrl4 = 0;
 
 
 //int8_t add_subt[16] = { 0, 1 , -1 , 0, -1 , 0 , 1, -1 , 0 , 0, -1, 0 , -1, 1, 0 };
@@ -88,14 +89,16 @@ int32_t counter = 0;
 SenselFrame frame;
 
 
-const uint32_t OLED_LINE_LENGTH = 21;
-char blankLine[OLED_LINE_LENGTH] = "                  ";
-char oled_line[OLED_LINE_LENGTH] = "";
-uint32_t oled_current_offset = 0;
+// const uint32_t OLED_LINE_LENGTH = 21;
+// char blankLine[OLED_LINE_LENGTH] = "                  ";
+// char oled_line[OLED_LINE_LENGTH] = "";
+// uint32_t oled_current_offset = 0;
 
 // allocate buffer used for incomming vcom messages, used also for 
 circular_buffer<char, 1024> cbuffer;
 void * cbufferC = (void*)&cbuffer;
+
+oled<1024> orac_oled{cbuffer};
 
 // char buffer3[100];
 // char buffer4[100];
@@ -421,24 +424,25 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
-  ssd1306_init_display();
-  ssd1306_clear_display();
+  orac_oled.init();
+  // ssd1306_init_display();
+  // ssd1306_clear_display();
   
-  //sprintf(buffer, "###IRONLINK###");
-  //char str[] = "   Muses xyz";
-  ssd1306_set_cursor(0,0);
-  ssd1306_write_string("   Module", Font_7x10, 1);
-  ssd1306_set_cursor(0,10);
-  ssd1306_write_string("   Ctrl 1", Font_7x10, 1);
-  ssd1306_set_cursor(0,20);
-  ssd1306_write_string("   Ctrl 2", Font_7x10, 1);
-  ssd1306_set_cursor(0,30);
-  ssd1306_write_string("   Ctrl 3", Font_7x10, 1);
-  ssd1306_set_cursor(0,40);
-  ssd1306_write_string("   Ctrl 4", Font_7x10, 1);
-  ssd1306_set_cursor(0,50);
-  ssd1306_write_string("   Page", Font_7x10, 1);
-  ssd1306_update_display();
+  // //sprintf(buffer, "###IRONLINK###");
+  // //char str[] = "   Muses xyz";
+  // ssd1306_set_cursor(0,0);
+  // ssd1306_write_string("   Module", Font_7x10, 1);
+  // ssd1306_set_cursor(0,10);
+  // ssd1306_write_string("   Ctrl 1", Font_7x10, 1);
+  // ssd1306_set_cursor(0,20);
+  // ssd1306_write_string("   Ctrl 2", Font_7x10, 1);
+  // ssd1306_set_cursor(0,30);
+  // ssd1306_write_string("   Ctrl 3", Font_7x10, 1);
+  // ssd1306_set_cursor(0,40);
+  // ssd1306_write_string("   Ctrl 4", Font_7x10, 1);
+  // ssd1306_set_cursor(0,50);
+  // ssd1306_write_string("   Page", Font_7x10, 1);
+  // ssd1306_update_display();
 
 //#if defined(__SEMIHOSTING__)
   //pcaudio::write(2, "Hello\n", 6);
@@ -525,6 +529,7 @@ int main(void)
     // handle buttons
     handleButtons();
     handleEncoders();
+    orac_oled.display();
 
     // handle OLED
     
@@ -570,25 +575,25 @@ int main(void)
     //   cdcRxBufferLength = 0;
     // }
 
-    while (!cbuffer.empty()) {
-      char c = cbuffer.pop();
-      // update OLED line, if at end of update message
-      if (c == '\n') {
-        uint32_t y = line_y_offset(oled_line[0]) * 10;
-        ssd1306_set_cursor(0,y);
-        ssd1306_write_string(blankLine, Font_7x10, 1);
-        oled_line[oled_current_offset] = '\0';
-        ssd1306_set_cursor(0,y);
-        ssd1306_write_string(&oled_line[1], Font_7x10, 1);
-        ssd1306_update_display();
-        // reset ready for next message
-        oled_current_offset = 0;
-      }
-      // otherwise, just store the next char of current message
-      else { 
-        oled_line[oled_current_offset++] = c;
-      }
-    }
+    // while (!cbuffer.empty()) {
+    //   char c = cbuffer.pop();
+    //   // update OLED line, if at end of update message
+    //   if (c == '\n') {
+    //     uint32_t y = line_y_offset(oled_line[0]) * 10;
+    //     ssd1306_set_cursor(0,y);
+    //     ssd1306_write_string(blankLine, Font_7x10, 1);
+    //     oled_line[oled_current_offset] = '\0';
+    //     ssd1306_set_cursor(0,y);
+    //     ssd1306_write_string(&oled_line[1], Font_7x10, 1);
+    //     ssd1306_update_display();
+    //     // reset ready for next message
+    //     oled_current_offset = 0;
+    //   }
+    //   // otherwise, just store the next char of current message
+    //   else { 
+    //     oled_line[oled_current_offset++] = c;
+    //   }
+    // }
 
     // ---------------------------------------------------------
     // big buttons
