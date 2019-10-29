@@ -207,10 +207,10 @@ struct Button {
 
 Button buttons[] = {
   // big buttons
-  { GPIOC, GPIO_PIN_7, 1, 0, "/b/0 127\n", 9, "/b/0 0\n", 7 }, 
-  { GPIOC, GPIO_PIN_8, 1, 0, "/b/1 127\n", 9, "/b/1 0\n", 7 }, 
-  { GPIOC, GPIO_PIN_9, 1, 0, "/b/2 127\n", 9, "/b/2 0\n", 7}, 
-  { GPIOA, GPIO_PIN_8, 1, 0, "/b/3 127\n", 9, "/b/3 0\n", 7 }, 
+  { GPIOC, GPIO_PIN_7, 1, 0, "/key 0 127\n", 11, "/key 0 0\n", 9 }, 
+  { GPIOC, GPIO_PIN_8, 1, 0, "/key 1 127\n", 11, "/key 1 0\n", 9 }, 
+  { GPIOC, GPIO_PIN_9, 1, 0, "/key 2 127\n", 11, "/key 2 0\n", 9 }, 
+  { GPIOA, GPIO_PIN_8, 1, 0, "/key 3 127\n", 11, "/key 3 0\n", 9 }, 
   // encoder buttons, which are used to select ORAC module/page
   { GPIOC, GPIO_PIN_6,  1, 0, "/ModulePrev 1\n", 14, NULL, 0 }, 
   { GPIOB, GPIO_PIN_10, 1, 0, "/ModuleNext 1\n", 14, NULL, 0 }, 

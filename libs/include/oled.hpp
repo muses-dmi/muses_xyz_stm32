@@ -118,12 +118,16 @@ private:
     }
 
 public:
+    /// setup oled class
+    /// NOTE: does not initialize OLED itself, init() must be called for this
     oled(circular_buffer<char, mcapacity>& cbuffer) : 
         cbuffer_{cbuffer},
         current_offset_{0},
         display_bank_1_{true} {
     }
 
+    /// intialize OLED display
+    /// NOTE: must be called after i2c interface is intialized
     void init() const {
         ssd1306_init_display();
         ssd1306_clear_display();
