@@ -38,9 +38,6 @@
 #include <ssd1306.h>
 #include <oled.hpp>
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
 const uint16_t ENCODER_4_A                    = GPIO_PIN_1;
 const uint16_t ENCODER_4_B                    = GPIO_PIN_0;
 GPIO_TypeDef* ENCODER_4_BANK            = GPIOA;
@@ -65,13 +62,6 @@ const uint16_t ENCODER_1_BUTTON               = GPIO_PIN_6;
 volatile uint8_t idx;
 volatile int32_t pos_count;
 
-// OLED controls
-// bool oled_values_changed = true; 
-// uint32_t ctrl1 = 0;
-// uint32_t ctrl2 = 0;
-// uint32_t ctrl3 = 0;
-// uint32_t ctrl4 = 0;
-
 
 //int8_t add_subt[16] = { 0, 1 , -1 , 0, -1 , 0 , 1, -1 , 0 , 0, -1, 0 , -1, 1, 0 };
 
@@ -87,12 +77,7 @@ int32_t pcounts[128] = {0};
 int32_t counter = 0;
 
 SenselFrame frame;
-
-
-// const uint32_t OLED_LINE_LENGTH = 21;
-// char blankLine[OLED_LINE_LENGTH] = "                  ";
-// char oled_line[OLED_LINE_LENGTH] = "";
-// uint32_t oled_current_offset = 0;
+char buffer[1024];
 
 // allocate buffer used for incomming vcom messages, used also for 
 circular_buffer<char, 1024> cbuffer;
@@ -100,29 +85,7 @@ void * cbufferC = (void*)&cbuffer;
 
 oled<1024> orac_oled{cbuffer};
 
-// char buffer3[100];
-// char buffer4[100];
-// char buffer5[100];
 
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 static constexpr int ENCODER_MSG_P1_LENGTH  = 7;
 static constexpr int ENCODER_MSG_M1_LENGTH  = 8;
 
@@ -198,19 +161,20 @@ struct Button {
   // button pressed
   uint8_t pressed_;
   // OSC message when button pressed
-  char msgOn_[15];
+  char msgOn_[25];
   uint32_t msgOnLen_;
   // OSC message when button released
-  char msgOff_[15];
+  char msgOff_[25];
   uint32_t msgOffLen_;
 };
 
 Button buttons[] = {
   // big buttons
-  { GPIOC, GPIO_PIN_7, 1, 0, "/key 0 127\n", 11, "/key 0 0\n", 9 }, 
+  { GPIOC, GPIO_PIN_7, 1, 0, "/key 0 100\n", 11, "/key 0 0\n", 9 }, 
   { GPIOC, GPIO_PIN_8, 1, 0, "/key 1 127\n", 11, "/key 1 0\n", 9 }, 
   { GPIOC, GPIO_PIN_9, 1, 0, "/key 2 127\n", 11, "/key 2 0\n", 9 }, 
-  { GPIOA, GPIO_PIN_8, 1, 0, "/key 3 127\n", 11, "/key 3 0\n", 9 }, 
+  //{ GPIOA, GPIO_PIN_8, 1, 0, "/key 2 127\n", 11, "/key 2 0\n", 9 }, 
+  { GPIOA, GPIO_PIN_8, 1, 0, "/knobs 0 0 0 0 127 127\n", 23, "/knobs 0 0 0 0 0 127\n", 21 },
   // encoder buttons, which are used to select ORAC module/page
   { GPIOC, GPIO_PIN_6,  1, 0, "/ModulePrev 1\n", 14, NULL, 0 }, 
   { GPIOB, GPIO_PIN_10, 1, 0, "/ModuleNext 1\n", 14, NULL, 0 }, 
@@ -226,61 +190,14 @@ I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart1;
 
-/* USER CODE BEGIN PV */
-
 Sensel sensel(huart1);
 
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 extern "C" void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_NVIC_Init(void);
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-uint32_t line_y_offset(char key) {
-  switch (key) {
-    case 'm': {
-      return 0;
-    }
-    case 'p': {
-      return 5;
-    }
-    case '1': {
-      return 1;
-    }
-    case '2': {
-      return 2;
-    }
-    case '3': {
-      return 3;
-    }
-    case '4': {
-      return 4;
-    }
-    case '5': {
-      return 1;
-    }
-    case '6': {
-      return 2;
-    }
-    case '7': {
-      return 3;
-    }
-    case '8': {
-      return 4;
-    }
-  }
-
-  return 0;
-}
 
 void handleButtons() {
   for (uint32_t i = 0; i < NUMBER_BUTTONS; i++) {
@@ -393,27 +310,15 @@ bool do_once = true;
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
- 
-
-  /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
+ 
   /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
+ 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
@@ -422,38 +327,13 @@ int main(void)
 
   /* Initialize interrupts */
   MX_NVIC_Init();
-  /* USER CODE BEGIN 2 */
-
+ 
   orac_oled.init();
-  // ssd1306_init_display();
-  // ssd1306_clear_display();
-  
-  // //sprintf(buffer, "###IRONLINK###");
-  // //char str[] = "   Muses xyz";
-  // ssd1306_set_cursor(0,0);
-  // ssd1306_write_string("   Module", Font_7x10, 1);
-  // ssd1306_set_cursor(0,10);
-  // ssd1306_write_string("   Ctrl 1", Font_7x10, 1);
-  // ssd1306_set_cursor(0,20);
-  // ssd1306_write_string("   Ctrl 2", Font_7x10, 1);
-  // ssd1306_set_cursor(0,30);
-  // ssd1306_write_string("   Ctrl 3", Font_7x10, 1);
-  // ssd1306_set_cursor(0,40);
-  // ssd1306_write_string("   Ctrl 4", Font_7x10, 1);
-  // ssd1306_set_cursor(0,50);
-  // ssd1306_write_string("   Page", Font_7x10, 1);
-  // ssd1306_update_display();
-
-//#if defined(__SEMIHOSTING__)
-  //pcaudio::write(2, "Hello\n", 6);
-//#endif
-
-  //HAL_Delay(3000);
-
+ 
   //Set frame content to scan. No pressure or label support.
-  //sensel.setFrameContent(SENSEL_REG_CONTACTS_FLAG);
+  sensel.setFrameContent(SENSEL_REG_CONTACTS_FLAG);
   //Start scanning the Sensel device
-  //sensel.startScanning();
+  sensel.startScanning();
   
   /* USER CODE END 2 */
 
@@ -516,124 +396,11 @@ int main(void)
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14,  GPIO_PIN_SET); // working green
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET); // works blue
     
-    //HAL_Delay(10);
-    //if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2) == GPIO_PIN_SET) {
-      // itoa(pos_count, buffer4, 10);
-      // int len = strlen(buffer4);
-      // buffer4[len++] = '\r';
-      // buffer4[len++] = '\n';
-      // buffer4[len++] = '\0';
-      // CDC_Transmit_FS((uint8_t*)buffer4, len);
-    //}
 
     // handle buttons
     handleButtons();
     handleEncoders();
     orac_oled.display();
-
-    // handle OLED
-    
-    // if (oled_values_changed) {
-
-    //   oled_values_changed = false;
-    //   tmpBuffer[0] = 'C';
-    //   tmpBuffer[1] = '1';
-    //   tmpBuffer[2] = ' ';
-    //   itoa(ctrl1, &tmpBuffer[3], 10);
-    //   ssd1306_set_cursor(0,11);
-    //   ssd1306_write_string(tmpBuffer, Font_7x10, 1);
-    //   ssd1306_update_display();
-
-    //   // we probably need to lock here...
-    //   // "num num \n"
-    //   // if (cdcRxBuffer[0] == '1') {
-    //   // }
-    //   // cdcRxBufferLength = 0;
-    // }
-
-
-    // if (cdcRxBufferLength != 0) {
-    //   // message /module
-    //   if (cdcRxBuffer[0] == 'm') {
-    //      int i = 1;
-    //      for (; cdcRxBuffer[i] != '\n'; i++) { }
-    //      ssd1306_set_cursor(0,0);
-    //      ssd1306_write_string(blankLine, Font_7x10, 1);
-    //      cdcRxBuffer[i] = '\0';
-    //      ssd1306_set_cursor(0,0);
-    //      ssd1306_write_string(&cdcRxBuffer[1], Font_7x10, 1);
-    //      ssd1306_update_display();
-    //   }
-    //   else if (cdcRxBuffer[0] == 'p') {
-    //      int i = 1;
-    //      for (; cdcRxBuffer[i] != '\n'; i++) { }
-    //      ssd1306_set_cursor(0,50);
-    //      cdcRxBuffer[i] = '\0';
-    //      ssd1306_write_string(&cdcRxBuffer[1], Font_7x10, 1);
-    //      ssd1306_update_display();
-    //   }
-    //   cdcRxBufferLength = 0;
-    // }
-
-    // while (!cbuffer.empty()) {
-    //   char c = cbuffer.pop();
-    //   // update OLED line, if at end of update message
-    //   if (c == '\n') {
-    //     uint32_t y = line_y_offset(oled_line[0]) * 10;
-    //     ssd1306_set_cursor(0,y);
-    //     ssd1306_write_string(blankLine, Font_7x10, 1);
-    //     oled_line[oled_current_offset] = '\0';
-    //     ssd1306_set_cursor(0,y);
-    //     ssd1306_write_string(&oled_line[1], Font_7x10, 1);
-    //     ssd1306_update_display();
-    //     // reset ready for next message
-    //     oled_current_offset = 0;
-    //   }
-    //   // otherwise, just store the next char of current message
-    //   else { 
-    //     oled_line[oled_current_offset++] = c;
-    //   }
-    // }
-
-    // ---------------------------------------------------------
-    // big buttons
-    //----------------------------------------------------------
-    // if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/1 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/2 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/3 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_8) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/4 1\n", 7);
-      
-    // }
-
-    // // ---------------------------------------------------------
-    // // handle encoders...
-    // //----------------------------------------------------------
-    // // buttons
-    // if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_6) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/5 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/6 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/7 1\n", 7);
-    // }
-
-    // if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2) == GPIO_PIN_SET) {
-    //   CDC_Transmit_FS((uint8_t*)"/b/8 1\n", 7);
-    // }
 
       //pcaudio::write(2, "3\n", 2);
       //Read the frame of contacts from the Sensel device
@@ -641,10 +408,10 @@ int main(void)
       //if (do_once) {
       //sensel.getSendFrame();
       
-      // sensel.getFrame(frame);
-      // if (frame.n_contacts > 0) {
-      //   sensel.outputFrame(buffer, frame);
-      // }
+      sensel.getFrame(frame);
+      if (frame.n_contacts > 0) {
+        sensel.outputFrame(buffer, frame);
+      }
       
       //HAL_Delay(10);
       //sensel.senselStopScanning();
@@ -654,37 +421,10 @@ int main(void)
       //}
     //}
 
-#if defined(__SEMIHOSTING__)
-    
-    //if (pos_count > 20) {
-    // sprintf(buffer, "%d\n", pos_count);
-    // sprintf(buffer2, "%d\n", counter);
-    // pcaudio::write(2, buffer2, strlen(buffer2));
-    //}
-
-    //itoa (idx,buffer,2);
-    // if (counter > 10) {
-    //   sprintf(buffer, "%d\n", pos_count);
-    //   pcaudio::write(2, buffer, strlen(buffer));
-
-    //   for (int i = 0; i < counter; i++) {
-    //     itoa(indexs[i], buffer, 2);
-    //     //itoa(pins[i], buffer3, 2);
-    //     itoa(as[i], buffer4, 2);
-    //     itoa(bs[i], buffer5, 2);
-
-    //     sprintf(buffer2, "%d\t\t%d %s %s %d\n", indexs[i], pins[i], buffer4, buffer5, pcounts[i]);
-    //     //sprintf(buffer2, "%d \n", pins[i], buffer4, buffer5, pos_count);
-    //     pcaudio::write(2, buffer2, strlen(buffer2));
-    //   }
-    //   //pos_count = 0;
-    //   counter = 0;
-    // }
-#endif
 
     /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
+
 }
 
 /**
